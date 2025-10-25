@@ -1,0 +1,55 @@
+# clangd配置文件
+# 这个文件用于配置clangd语言服务器的行为
+
+# 编译标志
+CompileFlags:
+  Add:
+    - -std=c++23
+    - -I.
+    - -Wall
+    - -Wextra
+    - -Wpedantic
+  Remove:
+    - -W*
+
+# 索引配置
+Index:
+  Background: Build
+
+# 诊断配置
+Diagnostics:
+  ClangTidy:
+    Add:
+      - readability-*
+      - performance-*
+      - modernize-*
+      - cert-* # 安全编码实践
+      - cppcoreguidelines-* # C++核心指南
+      - misc-* # 杂项有用检查
+      - concurrency-* # 并发相关
+    Remove:
+      - readability-magic-numbers
+      - readability-uppercase-literal-suffix
+      - modernize-use-trailing-return-type
+      - modernize-use-nodiscard
+      - readability-isolate-declaration
+      - readability-braces-around-statements
+      - readability-identifier-length
+      - misc-non-private-member-variables-in-classes
+      - cppcoreguidelines-pro-type-reinterpret-cast
+      - cppcoreguidelines-pro-bounds-pointer-arithmetic
+  UnusedIncludes: Strict
+
+# 补全配置
+Completion:
+  AllScopes: Yes
+
+# 悬停信息配置
+Hover:
+  ShowAKA: Yes
+
+# 内联提示配置
+InlayHints:
+  Enabled: Yes
+  ParameterNames: Yes
+  DeducedTypes: Yes

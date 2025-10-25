@@ -1,0 +1,16 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "name": "(lldb) Debug",
+      "type": "lldb",
+      "request": "launch",
+      "program": "${workspaceFolder}/build/MemoryPool",
+      "args": [
+        "-b",
+        "input/adaptec1"
+      ],
+      "cwd": "${workspaceFolder}"
+    }
+  ]
+}

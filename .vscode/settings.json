@@ -1,0 +1,29 @@
+{
+    // 禁用C/C++插件的IntelliSense，避免与clangd冲突
+    "C_Cpp.autocomplete": "disabled",
+    "C_Cpp.errorSquiggles": "disabled",
+    "C_Cpp.suggestSnippets": false,
+    // 启用clangd作为主要的C/C++语言服务器
+    "clangd.arguments": [
+        "--background-index",
+        "--clang-tidy",
+        "--header-insertion=iwyu",
+        "--completion-style=detailed",
+        "--function-arg-placeholders",
+        "--fallback-style=llvm"
+    ],
+    // 文件关联设置
+    "files.associations": {
+        "*.h": "cpp",
+        "*.hpp": "cpp",
+        "*.cpp": "cpp",
+        "*.cc": "cpp",
+        "*.cxx": "cpp"
+    },
+    // 编辑器设置
+    "editor.semanticHighlighting.enabled": true,
+    "editor.suggest.snippetsPreventQuickSuggestions": false,
+    // 禁用其他可能冲突的扩展
+    "C_Cpp.vcpkg.enabled": false,
+    "C_Cpp.configurationWarnings": "disabled"
+}

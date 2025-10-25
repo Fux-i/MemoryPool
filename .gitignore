@@ -1,0 +1,10 @@
+.vs
+.idea
+.cache
+build
+Debug
+Release
+docs
+test
+*.user
+*.filters
