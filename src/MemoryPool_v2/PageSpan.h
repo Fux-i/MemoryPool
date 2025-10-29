@@ -26,12 +26,10 @@ public:
 	[[nodiscard]] MemorySpan GetMemorySpan() const { return memory_; }
 
 private:
-	static constexpr size_t MAX_UNIT_COUNT = SizeUtil::PAGE_SIZE / SizeUtil::ALIGNMENT;
-
 	MemorySpan memory_;
 	size_t unitSize_;
 	// allocating status
-	std::bitset<MAX_UNIT_COUNT> allocatedMap_;
+	std::bitset<SizeUtil::MAX_UNIT_COUNT> allocatedMap_;
 };
 
 }
