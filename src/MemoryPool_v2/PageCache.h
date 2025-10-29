@@ -14,9 +14,6 @@ namespace MemoryPoolV2
 class PageCache
 {
 public:
-	// delete constructor
-	PageCache() = delete;
-	
 	static PageCache& GetInstance()
 	{
 		thread_local PageCache instance;
@@ -24,14 +21,14 @@ public:
 	}
 
 	/**
-	 * Allocate pages from system
+	 * Allocate pages from page store to central cache
 	 * @param pageCount number of pages to allocate
 	 * @return optional memory span
 	 */
 	std::optional<MemorySpan> AllocatePage(size_t pageCount);
 
 	/**
-	 * Deallocate pages to system
+	 * Recycle memory from central cache
 	 * @param page memory span
 	 */
 	void DeallocatePage(MemorySpan page);
@@ -52,6 +49,8 @@ public:
 	// Stop working
 	void Stop();
 private:
+	// hide constructor
+	PageCache() = default;
 
 	/**
 	 * System allocate memory
