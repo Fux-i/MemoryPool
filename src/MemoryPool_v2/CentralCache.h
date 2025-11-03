@@ -33,14 +33,16 @@ private:
 
 	std::optional<MemorySpan> GetPageFromPageCache(size_t pageCount);
 
-	std::array<std::byte*, SizeUtil::CACHE_LIST_SIZE> freeLists_;
-	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> freeListSizes_;
-	std::array<std::atomic_flag, SizeUtil::CACHE_LIST_SIZE> statusLists_;
+	std::array<std::byte*, SizeUtil::CACHE_LIST_SIZE> freeLists_{};
+	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> freeListSizes_{};
+	std::array<std::atomic_flag, SizeUtil::CACHE_LIST_SIZE> statusLists_{};
 
 	// record allocated memory
-	std::array<std::map<std::byte*, PageSpan>, SizeUtil::CACHE_LIST_SIZE> pageMaps_;
+	std::array<std::map<std::byte*, PageSpan>, SizeUtil::CACHE_LIST_SIZE> pageMaps_{};
 
-	// change allocated memory adaptively
+	// dynamic memory allocation strategy: allocate memory in groups
+	// 1 group = ThreadCache::MAX_FREE_BYTES_PER_LIST
+	// start with 1 group, increase by 1 each time, halve on recycle
 	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> nextAllocateMemoryGroupCount_{};
 };
 

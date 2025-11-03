@@ -7,20 +7,15 @@ void PageSpan::Allocate(const MemorySpan memory)
 {
 	// check if the memory is in charge
 	assert(IsInCharge(memory));
-	const ptrdiff_t addressOffset = memory.GetData() - memory_.GetData();
-	const size_t index = addressOffset / unitSize_;
-	assert(allocatedMap_[index] == 0);
-	allocatedMap_[index] = true;
+	allocatedUnitCount_++;
 }
 
 void PageSpan::Deallocate(const MemorySpan memory)
 {
 	// check if the memory is in charge
 	assert(IsInCharge(memory));
-	const ptrdiff_t addressOffset = memory.GetData() - memory_.GetData();
-	const size_t index = addressOffset / unitSize_;
-	assert(allocatedMap_[index] == 1);
-	allocatedMap_[index] = false;
+	assert(allocatedUnitCount_ > 0);
+	allocatedUnitCount_--;
 }
 
 bool PageSpan::IsInCharge(const MemorySpan memory) const

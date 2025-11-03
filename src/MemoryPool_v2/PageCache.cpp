@@ -1,4 +1,5 @@
 ﻿#include "PageCache.h"
+#include <cstring>
 
 namespace MemoryPoolV2
 {
@@ -58,7 +59,7 @@ void PageCache::DeallocatePage(MemorySpan page)
 	// check previous memory spans, combine if continuous
 	while (!freePageMap_.empty())
 	{
-		// page should not be contain
+		// page should not be contained
 		assert(!freePageMap_.contains(page.GetData()));
 		// find first element that greater than given one
 		auto it = freePageMap_.upper_bound(page.GetData());
@@ -153,7 +154,7 @@ void PageCache::SystemFree(MemorySpan pages)
 #ifdef _WIN32
 	VirtualFree(pages.GetData(), 0, MEM_RELEASE);
 #elif defined(__linux__) || defined(__APPLE__)
-	mmap(pages.GetData(), pages.GetSize());
+	munmap(pages.GetData(), pages.GetSize());
 #endif
 }
 

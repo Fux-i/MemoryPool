@@ -35,8 +35,8 @@ public:
 	MemorySpan(std::byte* data, const size_t size) : data_(data), size_(size) {}
 	MemorySpan(const MemorySpan&) = default;
 	MemorySpan& operator=(const MemorySpan&) = default;
-	MemorySpan(const MemorySpan&&) = default;
-	MemorySpan& operator=(const MemorySpan&&) = default;
+	MemorySpan(MemorySpan&&) = default;
+	MemorySpan& operator=(MemorySpan&&) = default;
 	~MemorySpan() = default;
 	
 	[[nodiscard]] std::byte* GetData() const { return data_; }
@@ -52,7 +52,7 @@ public:
 	}
 	[[nodiscard]] MemorySpan SubSpan(const size_t offset) const
 	{
-		assert(offset <= size_ &&  size <= size_ - offset);
+		assert(offset <= size_);
 		return MemorySpan{data_ + offset, size_ - offset};
 	}
 
@@ -76,6 +76,14 @@ private:
 	std::atomic_flag& flag_;
 };
 
+[[nodiscard]]
+inline std::byte*& GetNextBlock(std::byte* ptr)
+{
+	assert(ptr != nullptr);
+	return *reinterpret_cast<std::byte**>(ptr);
+}
+
+[[nodiscard]]
 inline size_t CountBlock(std::byte* ptr)
 {
 	size_t result = 0;
@@ -83,7 +91,7 @@ inline size_t CountBlock(std::byte* ptr)
 	while (current != nullptr)
 	{
 		result++;
-		current = *reinterpret_cast<std::byte**>(current);
+		current = GetNextBlock(current);
 	}
 	return result;
 }
