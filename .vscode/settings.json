@@ -5,10 +5,14 @@
     "C_Cpp.suggestSnippets": false,
     // 启用clangd作为主要的C/C++语言服务器
     "clangd.arguments": [
+        "--compile-commands-dir=${workspaceFolder}/build",
+        "--completion-style=detailed",
         "--background-index",
         "--clang-tidy",
+        "--clang-tidy-checks=performance-*,bugprone-*",
+        "--all-scopes-completion",
         "--header-insertion=iwyu",
-        "--completion-style=detailed",
+        "-j=12",
         "--function-arg-placeholders",
         "--fallback-style=llvm"
     ],
