@@ -9,12 +9,12 @@ namespace MemoryPoolV2
 
 class SizeUtil
 {
-public:
-	static constexpr size_t ALIGNMENT = sizeof(void*);	// 所在平台的指针大小
-    static constexpr size_t PAGE_SIZE = 4096;
-    static constexpr size_t MAX_UNIT_COUNT = PAGE_SIZE / ALIGNMENT;
+  public:
+	static constexpr size_t ALIGNMENT			 = sizeof(void*); // 所在平台的指针大小
+	static constexpr size_t PAGE_SIZE			 = 4096;
+	static constexpr size_t MAX_UNIT_COUNT		 = PAGE_SIZE / ALIGNMENT;
 	static constexpr size_t MAX_CACHED_UNIT_SIZE = 1 << 14; // 16KB
-	static constexpr size_t CACHE_LIST_SIZE = MAX_CACHED_UNIT_SIZE / ALIGNMENT;
+	static constexpr size_t CACHE_LIST_SIZE		 = MAX_CACHED_UNIT_SIZE / ALIGNMENT;
 
 	// 内存大小向上对齐到指针大小整数倍
 	static size_t AlignSize(const size_t rawSize, const size_t alignment = ALIGNMENT)
@@ -31,23 +31,37 @@ public:
 
 class MemorySpan
 {
-public:
-	MemorySpan(std::byte* data, const size_t size) : data_(data), size_(size) {}
-	MemorySpan(const MemorySpan&) = default;
+  public:
+	MemorySpan(std::byte* data, const size_t size) : data_(data), size_(size)
+	{
+	}
+	MemorySpan(const MemorySpan&)			 = default;
 	MemorySpan& operator=(const MemorySpan&) = default;
-	MemorySpan(MemorySpan&&) = default;
-	MemorySpan& operator=(MemorySpan&&) = default;
-	~MemorySpan() = default;
-	
-	[[nodiscard]] std::byte* GetData() const { return data_; }
-	[[nodiscard]] size_t GetSize() const { return size_; }
+	MemorySpan(MemorySpan&&)				 = default;
+	MemorySpan& operator=(MemorySpan&&)		 = default;
+	~MemorySpan()							 = default;
 
-	auto operator<=>(const MemorySpan& other) const { return data_ <=> other.data_; }
-	bool operator==(const MemorySpan& other) const { return data_ == other.data_ && size_ == other.size_; }
+	[[nodiscard]] std::byte* GetData() const
+	{
+		return data_;
+	}
+	[[nodiscard]] size_t GetSize() const
+	{
+		return size_;
+	}
+
+	auto operator<=>(const MemorySpan& other) const
+	{
+		return data_ <=> other.data_;
+	}
+	bool operator==(const MemorySpan& other) const
+	{
+		return data_ == other.data_ && size_ == other.size_;
+	}
 
 	[[nodiscard]] MemorySpan SubSpan(const size_t offset, const size_t size) const
 	{
-		assert(offset <= size_ &&  size <= size_ - offset);
+		assert(offset <= size_ && size <= size_ - offset);
 		return MemorySpan{data_ + offset, size};
 	}
 	[[nodiscard]] MemorySpan SubSpan(const size_t offset) const
@@ -56,23 +70,25 @@ public:
 		return MemorySpan{data_ + offset, size_ - offset};
 	}
 
-private:
+  private:
 	std::byte* data_;
-	size_t size_;
+	size_t	   size_;
 };
 
 class AtomicFlagGuard
 {
-public:
+  public:
 	explicit AtomicFlagGuard(std::atomic_flag& flag) : flag_(flag)
 	{
-		while (flag_.test_and_set(std::memory_order_acquire))
-			std::this_thread::yield();
+		while (flag_.test_and_set(std::memory_order_acquire)) std::this_thread::yield();
 	}
 
-	~AtomicFlagGuard(){ flag_.clear(std::memory_order_release); }
+	~AtomicFlagGuard()
+	{
+		flag_.clear(std::memory_order_release);
+	}
 
-private:
+  private:
 	std::atomic_flag& flag_;
 };
 
@@ -86,9 +102,10 @@ inline std::byte*& GetNextBlock(std::byte* ptr)
 [[nodiscard]]
 inline size_t CountBlock(std::byte* ptr)
 {
-	size_t result = 0;
-	std::byte* current = ptr;
-	while (current != nullptr)
+	size_t			 result			= 0;
+	std::byte*		 current		= ptr;
+	constexpr size_t MAX_ITERATIONS = 1000000; // Reasonable upper bound
+	while (current != nullptr && result < MAX_ITERATIONS)
 	{
 		result++;
 		current = GetNextBlock(current);
@@ -96,4 +113,4 @@ inline size_t CountBlock(std::byte* ptr)
 	return result;
 }
 
-}
+} // namespace MemoryPoolV2

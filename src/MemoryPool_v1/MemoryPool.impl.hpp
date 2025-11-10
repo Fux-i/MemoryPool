@@ -1,8 +1,8 @@
 ﻿#pragma once
 
+#include "MemoryPool.decl.hpp"
 #include <iostream>
 #include <vector>
-#include "MemoryPool.decl.hpp"
 
 // 调试输出开关
 #define MemoryPool_DEBUG 1
@@ -30,21 +30,16 @@ bool operator!=(const MemoryPool<T, BlockSize>& lhs, const MemoryPool<T, BlockSi
 
 // 构造函数
 template <typename T, size_t BlockSize>
-MemoryPool<T, BlockSize>::MemoryPool() noexcept 
-	: currentBlock_(nullptr)
-    , currentSlot_(nullptr)
-    , lastSlot_(nullptr)
-    , freeSlot_(nullptr)
+MemoryPool<T, BlockSize>::MemoryPool() noexcept
+	: currentBlock_(nullptr), currentSlot_(nullptr), lastSlot_(nullptr), freeSlot_(nullptr)
 {
 	static_assert(BlockSize >= 2 * paddedSlotSize, "BlockSize too small");
-	POOL_LOG("\n[construct] MemoryPool<" << typeid(T).name()
-		<< ", " << BlockSize << ">(this=" << this << ")\n");
-	POOL_LOG("	sizeof(T)=" << sizeof(T)
-		<< ", sizeof(slot)=" << sizeof(Slot)
-		<< ", paddedSlotSize=" << paddedSlotSize << "\n");
-	POOL_LOG("	BlockSize=" << BlockSize
-		<< ", aligned BlockSize=" << alignedBlockSize
-		<< ", available slots=" << slotsPerBlock << "\n");
+	POOL_LOG("\n[construct] MemoryPool<" << typeid(T).name() << ", " << BlockSize
+										 << ">(this=" << this << ")\n");
+	POOL_LOG("	sizeof(T)=" << sizeof(T) << ", sizeof(slot)=" << sizeof(Slot)
+							<< ", paddedSlotSize=" << paddedSlotSize << "\n");
+	POOL_LOG("	BlockSize=" << BlockSize << ", aligned BlockSize=" << alignedBlockSize
+							<< ", available slots=" << slotsPerBlock << "\n");
 }
 
 // 析构函数
@@ -53,8 +48,8 @@ MemoryPool<T, BlockSize>::~MemoryPool() noexcept
 {
 	POOL_LOG("\n[destroy] MemoryPool(this=" << this << ")\n");
 	// 释放所有分配的内存块
-	int blockCount = 0;
-	Slot* curr = currentBlock_;
+	int	  blockCount = 0;
+	Slot* curr		 = currentBlock_;
 	while (curr != nullptr)
 	{
 		Slot* next = curr->next;
@@ -67,14 +62,11 @@ MemoryPool<T, BlockSize>::~MemoryPool() noexcept
 
 // 拷贝构造函数（创建新的独立实例）
 template <typename T, size_t BlockSize>
-MemoryPool<T, BlockSize>::MemoryPool(const MemoryPool&) noexcept 
-	: currentBlock_(nullptr)
-    , currentSlot_(nullptr)
-    , lastSlot_(nullptr)
-    , freeSlot_(nullptr)
+MemoryPool<T, BlockSize>::MemoryPool(const MemoryPool&) noexcept
+	: currentBlock_(nullptr), currentSlot_(nullptr), lastSlot_(nullptr), freeSlot_(nullptr)
 {
-	POOL_LOG("\n[copy construct] MemoryPool<" << typeid(T).name()
-		<< ", " << BlockSize << ">(this=" << this << ")\n");
+	POOL_LOG("\n[copy construct] MemoryPool<" << typeid(T).name() << ", " << BlockSize
+											  << ">(this=" << this << ")\n");
 }
 
 // 分配内存
@@ -135,7 +127,7 @@ void MemoryPool<T, BlockSize>::deallocate(T* p, size_t n)
 	// 将释放的内存加入空闲链表
 	Slot* slotPtr = reinterpret_cast<Slot*>(p);
 	slotPtr->next = freeSlot_;
-	freeSlot_ = slotPtr;
+	freeSlot_	  = slotPtr;
 	POOL_LOG(" (to free list)\n");
 }
 
@@ -151,14 +143,14 @@ void MemoryPool<T, BlockSize>::allocateBlock()
 
 	// 将新块链接到块链表中（使用第一个 slot 存储链表指针）
 	reinterpret_cast<Slot*>(newBlock)->next = currentBlock_;
-	currentBlock_ = reinterpret_cast<Slot*>(newBlock);
+	currentBlock_							= reinterpret_cast<Slot*>(newBlock);
 
 	// 设置当前块的起始和结束位置（跳过第一个用于链表的 slot）
-	char* body = newBlock + paddedSlotSize;
-	currentSlot_ = reinterpret_cast<Slot*>(body);
-	lastSlot_ = reinterpret_cast<Slot*>(newBlock + alignedBlockSize);
+	char* body								= newBlock + paddedSlotSize;
+	currentSlot_							= reinterpret_cast<Slot*>(body);
+	lastSlot_								= reinterpret_cast<Slot*>(newBlock + alignedBlockSize);
 
-	POOL_LOG("	range: [" << static_cast<void*>(currentSlot_)
-		<< ", " << static_cast<void*>(lastSlot_) << ")\n");
+	POOL_LOG("	range: [" << static_cast<void*>(currentSlot_) << ", "
+						  << static_cast<void*>(lastSlot_) << ")\n");
 	POOL_LOG("	available slots: " << slotsPerBlock << "\n");
 }

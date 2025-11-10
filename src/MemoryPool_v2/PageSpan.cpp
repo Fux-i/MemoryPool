@@ -20,12 +20,15 @@ void PageSpan::Deallocate(const MemorySpan memory)
 
 bool PageSpan::IsInCharge(const MemorySpan memory) const
 {
-	if (memory.GetSize() != unitSize_) return false;
-	if (memory.GetData() < memory_.GetData()) return false;
+	if (memory.GetSize() != unitSize_)
+		return false;
+	if (memory.GetData() < memory_.GetData())
+		return false;
 	// check start address
 	const ptrdiff_t addressOffset = memory.GetData() - memory_.GetData();
-	if (addressOffset % unitSize_ != 0) return false;
+	if (addressOffset % unitSize_ != 0)
+		return false;
 	// check end address
 	return addressOffset + unitSize_ <= memory_.GetSize();
 }
-}
+} // namespace MemoryPoolV2

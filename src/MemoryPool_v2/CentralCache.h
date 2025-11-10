@@ -13,7 +13,7 @@ namespace MemoryPoolV2
 
 class CentralCache
 {
-public:
+  public:
 	static CentralCache& GetInstance()
 	{
 		static CentralCache instance;
@@ -24,17 +24,17 @@ public:
 
 	void Deallocate(std::byte* memoryList, size_t memorySize);
 
-private:
+  private:
 	static constexpr size_t PAGE_SPAN = 8;
 
 	size_t GetAllocatedPageCount(size_t memorySize);
-	
+
 	void RecordAllocatedMemorySpan(std::byte* memory, size_t memorySize);
 
 	std::optional<MemorySpan> GetPageFromPageCache(size_t pageCount);
 
-	std::array<std::byte*, SizeUtil::CACHE_LIST_SIZE> freeLists_{};
-	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> freeListSizes_{};
+	std::array<std::byte*, SizeUtil::CACHE_LIST_SIZE>		freeLists_{};
+	std::array<size_t, SizeUtil::CACHE_LIST_SIZE>			freeListSizes_{};
 	std::array<std::atomic_flag, SizeUtil::CACHE_LIST_SIZE> statusLists_{};
 
 	// record allocated memory
@@ -46,4 +46,4 @@ private:
 	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> nextAllocateMemoryGroupCount_{};
 };
 
-}
+} // namespace MemoryPoolV2

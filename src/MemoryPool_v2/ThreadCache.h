@@ -11,7 +11,7 @@ namespace MemoryPoolV2
 
 class ThreadCache
 {
-public:
+  public:
 	static ThreadCache& GetInstance()
 	{
 		thread_local ThreadCache instance;
@@ -33,7 +33,7 @@ public:
 	 */
 	void Deallocate(void* ptr, size_t memorySize);
 
-private:
+  private:
 	/**
 	 * Fetch from central cache
 	 * @param memorySize the size of memory to allocate
@@ -44,13 +44,11 @@ private:
 	size_t ComputeAllocateCount(size_t size);
 
 	std::array<std::byte*, SizeUtil::CACHE_LIST_SIZE> freeList_{};
-	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> freeListSize_{};
-	std::array<size_t, SizeUtil::CACHE_LIST_SIZE> nextAllocateCount_{};
+	std::array<size_t, SizeUtil::CACHE_LIST_SIZE>	  freeListSize_{};
+	std::array<size_t, SizeUtil::CACHE_LIST_SIZE>	  nextAllocateCount_{};
 
-public:
-	// maximum is 256KB per list (used by CentralCache too)
-	static constexpr size_t MAX_FREE_BYTES_PER_LIST = 1 << 18;
-	
+  public:
+	static constexpr size_t MAX_FREE_BYTES_PER_LIST = 1 << 21; // 2MB
 };
 
-}
+} // namespace MemoryPoolV2

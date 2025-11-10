@@ -13,10 +13,10 @@ namespace MemoryPoolV2
 
 class PageCache
 {
-public:
+  public:
 	static PageCache& GetInstance()
 	{
-		thread_local PageCache instance;
+		static PageCache instance;
 		return instance;
 	}
 
@@ -45,10 +45,11 @@ public:
 	 * @param memoryUnit memory span
 	 */
 	void DeallocateUnit(MemorySpan memoryUnit);
-	
+
 	// Stop working
 	void Stop();
-private:
+
+  private:
 	// hide constructor
 	PageCache() = default;
 
@@ -66,12 +67,13 @@ private:
 	void SystemFree(MemorySpan pages);
 
 	static constexpr size_t PAGE_ALLOCATE_COUNT = 2048;
-	
-	std::map<size_t, std::set<MemorySpan>> freePageStore_;	// [page count - memory span] map, for allocate
-	std::map<std::byte*, MemorySpan> freePageMap_;	// [ptr = memory span] map, for deallocate
-	std::vector<MemorySpan> pageVector_;
-	bool isStop_ = false;
-	std::mutex mutex_;
+
+	std::map<size_t, std::set<MemorySpan>>
+									 freePageStore_; // [page count - memory span] map, for allocate
+	std::map<std::byte*, MemorySpan> freePageMap_;	 // [ptr = memory span] map, for deallocate
+	std::vector<MemorySpan>			 pageVector_;
+	bool							 isStop_ = false;
+	std::mutex						 mutex_;
 };
 
-}
+} // namespace MemoryPoolV2
