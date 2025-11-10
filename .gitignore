@@ -2,6 +2,8 @@
 .idea
 .cache
 build
+build_test
+third_party
 Debug
 Release
 docs
