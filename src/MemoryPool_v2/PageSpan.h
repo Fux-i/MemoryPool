@@ -23,7 +23,7 @@ class PageSpan
 	void Allocate(MemorySpan memory);
 	void Deallocate(MemorySpan memory);
 
-	[[nodiscard]] bool empty() const
+	[[nodiscard]] bool CanBeRecycled() const
 	{
 		return allocatedUnitCount_ == 0;
 	}

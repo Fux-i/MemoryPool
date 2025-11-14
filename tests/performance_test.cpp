@@ -65,7 +65,7 @@ TEST(MemoryPoolV2_Performance, Test1_SingleThread_MassiveSmallObjects)
 {
 	const size_t kObjectSize = 32;
 	const size_t kPoolSize	 = 1000;
-	const size_t kIterations = 100000;
+	const size_t kIterations = 100'0000;
 
 	std::cout << "\n" << std::string(70, '=') << "\n";
 	std::cout << "TEST 1: Single-threaded Massive Small Objects\n";
@@ -177,8 +177,8 @@ TEST(MemoryPoolV2_Performance, Test2_MultiThread_MassiveSmallObjects)
 {
 	const size_t kThreads	 = std::thread::hardware_concurrency();
 	const size_t kObjectSize = 32;
-	const size_t kPoolSize	 = 500;
-	const size_t kIterations = 50000;
+	const size_t kPoolSize	 = 50;
+	const size_t kIterations = 100'0000;
 
 	std::cout << "\n" << std::string(70, '=') << "\n";
 	std::cout << "TEST 2: Multi-threaded Massive Small Objects\n";
@@ -303,8 +303,8 @@ TEST(MemoryPoolV2_Performance, Test2_MultiThread_MassiveSmallObjects)
 TEST(MemoryPoolV2_Performance, Test3_MultiThread_RandomSmallObjects)
 {
 	const size_t kThreads	 = std::thread::hardware_concurrency();
-	const size_t kPoolSize	 = 400;
-	const size_t kIterations = 40000;
+	const size_t kPoolSize	 = 40;
+	const size_t kIterations = 100'0000;
 	const size_t kMinSize	 = 16;
 	const size_t kMaxSize	 = 128;
 

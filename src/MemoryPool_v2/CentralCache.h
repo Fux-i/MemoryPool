@@ -25,8 +25,6 @@ class CentralCache
 	void Deallocate(std::byte* memoryList, size_t memorySize);
 
   private:
-	static constexpr size_t PAGE_SPAN = 8;
-
 	size_t GetAllocatedPageCount(size_t memorySize);
 
 	void RecordAllocatedMemorySpan(std::byte* memory, size_t memorySize);
@@ -37,7 +35,7 @@ class CentralCache
 	std::array<size_t, SizeUtil::CACHE_LIST_SIZE>			freeListSizes_{};
 	std::array<std::atomic_flag, SizeUtil::CACHE_LIST_SIZE> statusLists_{};
 
-	// record allocated memory
+	// record hold pages
 	std::array<std::map<std::byte*, PageSpan>, SizeUtil::CACHE_LIST_SIZE> pageMaps_{};
 
 	// dynamic memory allocation strategy: allocate memory in groups

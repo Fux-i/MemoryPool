@@ -10,7 +10,8 @@ std::optional<void*> ThreadCache::Allocate(size_t memorySize)
 	if (memorySize == 0)
 		return std::nullopt;
 
-	memorySize = SizeUtil::AlignSize(memorySize);
+	// Round up to the nearest size class
+	memorySize = SizeUtil::GetSizeClass(memorySize);
 	if (memorySize > SizeUtil::MAX_CACHED_UNIT_SIZE)
 		return FetchFromCentralCache(memorySize)
 			.and_then([](std::byte* memory) { return std::optional<void*>(memory); });
@@ -32,7 +33,8 @@ void ThreadCache::Deallocate(void* ptr, size_t memorySize)
 	if (memorySize == 0 || ptr == nullptr)
 		return;
 
-	memorySize = SizeUtil::AlignSize(memorySize);
+	// Round up to the nearest size class
+	memorySize = SizeUtil::GetSizeClass(memorySize);
 	if (memorySize > SizeUtil::MAX_CACHED_UNIT_SIZE)
 	{
 		CentralCache::GetInstance().Deallocate(static_cast<std::byte*>(ptr), memorySize);
@@ -102,8 +104,6 @@ std::optional<std::byte*> ThreadCache::FetchFromCentralCache(size_t memorySize)
 				// Ensure the last node's next pointer is explicitly set to nullptr
 				// This prevents issues with uninitialized memory in Windows debug mode
 				GetNextBlock(listEnd) = nullptr;
-				// 性能优化：在 Release 模式下跳过此断言检查
-				// assert(listLength == blockCount);
 				GetNextBlock(listEnd) = freeList_[index];
 				freeList_[index]	  = GetNextBlock(memoryList);
 				freeListSize_[index] += blockCount - 1;
@@ -118,35 +118,32 @@ size_t ThreadCache::ComputeAllocateCount(size_t size)
 	if (index >= SizeUtil::CACHE_LIST_SIZE)
 		return 1;
 
-	// 性能优化：提高初始分配数量，减少与 CentralCache 的交互
-	// 小对象分配更多，大对象分配较少
-	size_t minBlocks = 64; // 基础最小块数，从 4 提升到 64
-	if (size <= 128)
-	{
-		minBlocks = 128; // 128字节以下的小对象，初始分配更多
-	}
-	else if (size <= 512)
-	{
-		minBlocks = 64;
-	}
-	else if (size <= 2048)
-	{
-		minBlocks = 32;
-	}
-	else
-	{
-		minBlocks = 16;
-	}
-
-	const size_t result = std::max(nextAllocateCount_[index], minBlocks);
+	// Slow start strategy: start with 16 blocks, double each time
+	// Higher initial count reduces CentralCache interactions
+	size_t		 minBlocks = 16;
+	const size_t result	   = std::max(nextAllocateCount_[index], minBlocks);
 
 	// Calculate next allocate count: double it (slow start strategy)
 	size_t nextCount = result * 2;
 
-	// Limit 1: don't exceed max list capacity (reserve half for buffer)
-	nextCount = std::min(nextCount, MAX_FREE_BYTES_PER_LIST / size / 2);
+	// Set upper limit based on object size
+	size_t maxBlocks;
+	if (size <= 128)
+	{
+		maxBlocks = 256; // Small objects (≤128B): max 256 blocks
+	}
+	else if (size <= 1024)
+	{
+		maxBlocks = 128; // Medium objects (≤1KB): max 128 blocks
+	}
+	else
+	{
+		maxBlocks = 64; // Large objects (>1KB): max 64 blocks
+	}
 
-	// Limit 2: reasonable upper bound for allocation count
+	// Apply limits
+	nextCount = std::min(nextCount, maxBlocks);
+	nextCount = std::min(nextCount, MAX_FREE_BYTES_PER_LIST / size / 2);
 	nextCount = std::min(nextCount, SizeUtil::MAX_UNIT_COUNT);
 
 	// Update for next allocation

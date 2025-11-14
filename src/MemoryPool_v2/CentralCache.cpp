@@ -8,8 +8,7 @@ namespace MemoryPoolV2
 
 std::optional<std::byte*> CentralCache::Allocate(size_t memorySize, size_t blockCount)
 {
-	assert(memorySize % 8 == 0 && blockCount <= SizeUtil::MAX_UNIT_COUNT);
-
+	// Note: memorySize should already be a size class from ThreadCache
 	if (memorySize == 0 || blockCount == 0)
 		return std::nullopt;
 
@@ -17,10 +16,10 @@ std::optional<std::byte*> CentralCache::Allocate(size_t memorySize, size_t block
 	if (memorySize > SizeUtil::MAX_CACHED_UNIT_SIZE)
 		return PageCache::GetInstance()
 			.AllocateUnit(memorySize)
-			.transform([this](MemorySpan memory) { return memory.GetData(); });
+			.transform([](MemorySpan memory) { return memory.GetData(); });
 
-	const size_t	index  = SizeUtil::GetIndex(memorySize);
-	std::byte*		result = nullptr;
+	const size_t index	= SizeUtil::GetIndex(memorySize);
+	std::byte*	 result = nullptr;
 
 	AtomicFlagGuard guard(statusLists_[index]);
 	try
@@ -29,25 +28,25 @@ std::optional<std::byte*> CentralCache::Allocate(size_t memorySize, size_t block
 		if (freeListSizes_[index] < blockCount)
 		{
 			const size_t allocatedPageCount = GetAllocatedPageCount(memorySize);
-			const auto	 ret				= GetPageFromPageCache(allocatedPageCount);
+			const auto	 ret = GetPageFromPageCache(allocatedPageCount);
 			if (!ret.has_value())
 				return std::nullopt;
 
 			MemorySpan memory = ret.value();
 			// use PageSpan to manage
-			PageSpan   pageSpan(memory, memorySize);
-			// Calculate actual unit count based on allocated memory size
-			size_t	   allocatedUnitCount = memory.GetSize() / memorySize;
+			PageSpan pageSpan(memory, memorySize);
+			// Calculate actual memory span count based on allocated memory size
+			size_t allocatedSpanCount = memory.GetSize() / memorySize;
 
-			// split
+			// split and make a list
 			for (size_t i = 0; i < blockCount; i++)
 			{
 				MemorySpan splitMemory = memory.SubSpan(0, memorySize);
 				memory				   = memory.SubSpan(memorySize);
-				assert((index + 1) * 8 == splitMemory.GetSize());
+				assert(splitMemory.GetSize() == memorySize);
 
 				GetNextBlock(splitMemory.GetData()) = result;
-				result								= splitMemory.GetData();
+				result = splitMemory.GetData();
 				// allocate
 				pageSpan.Allocate(splitMemory);
 			}
@@ -58,12 +57,12 @@ std::optional<std::byte*> CentralCache::Allocate(size_t memorySize, size_t block
 			assert(success);
 
 			// add the rest to free list
-			allocatedUnitCount -= blockCount;
-			for (size_t i = 0; i < allocatedUnitCount; i++)
+			allocatedSpanCount -= blockCount;
+			for (size_t i = 0; i < allocatedSpanCount; i++)
 			{
 				MemorySpan splitMemory = memory.SubSpan(0, memorySize);
 				memory				   = memory.SubSpan(memorySize);
-				assert((index + 1) * 8 == splitMemory.GetSize());
+				assert(splitMemory.GetSize() == memorySize);
 
 				GetNextBlock(splitMemory.GetData()) = freeLists_[index];
 				freeLists_[index]					= splitMemory.GetData();
@@ -72,7 +71,6 @@ std::optional<std::byte*> CentralCache::Allocate(size_t memorySize, size_t block
 		}
 		else // current cache is enough
 		{
-			auto& targetList = freeLists_[index];
 			assert(freeListSizes_[index] >= blockCount);
 			// split
 			for (size_t i = 0; i < blockCount; i++)
@@ -113,11 +111,11 @@ void CentralCache::Deallocate(std::byte* memoryList, size_t memorySize)
 	const size_t	index = SizeUtil::GetIndex(memorySize);
 	AtomicFlagGuard guard(statusLists_[index]);
 
-	std::byte*		currentSpan = memoryList;
+	std::byte* currentSpan = memoryList;
 	while (currentSpan != nullptr)
 	{
 		std::byte* nextSpan = GetNextBlock(currentSpan);
-		assert((index + 1) * 8 == memorySize);
+		assert(SizeUtil::SIZE_CLASSES[index] == memorySize);
 
 		GetNextBlock(currentSpan) = freeLists_[index];
 		freeLists_[index]		  = currentSpan;
@@ -129,7 +127,7 @@ void CentralCache::Deallocate(std::byte* memoryList, size_t memorySize)
 		assert(it->second.IsInCharge(MemorySpan{currentSpan, memorySize}));
 
 		// check if the page need to be recycled
-		if (it->second.empty())
+		if (it->second.CanBeRecycled())
 		{
 			const auto pageStart = it->second.GetData();
 			const auto pageEnd	 = pageStart + it->second.GetSize();
@@ -182,11 +180,11 @@ void CentralCache::Deallocate(std::byte* memoryList, size_t memorySize)
 size_t CentralCache::GetAllocatedPageCount(size_t memorySize)
 {
 	// Dynamic group allocation strategy
-	const size_t index					 = SizeUtil::GetIndex(memorySize);
-	size_t		 result					 = nextAllocateMemoryGroupCount_[index];
+	const size_t index	= SizeUtil::GetIndex(memorySize);
+	size_t		 result = nextAllocateMemoryGroupCount_[index];
 
 	// At least allocate 1 group
-	result								 = std::max(result, size_t{1});
+	result = std::max(result, size_t{1});
 
 	// Update: next time allocate one more group (slow start strategy)
 	nextAllocateMemoryGroupCount_[index] = result + 1;

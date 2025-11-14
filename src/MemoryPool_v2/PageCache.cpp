@@ -8,14 +8,14 @@ std::optional<MemorySpan> PageCache::AllocatePage(size_t pageCount)
 {
 	if (pageCount == 0)
 		return std::nullopt;
-	std::lock_guard	 guard(mutex_);
+	std::lock_guard guard(mutex_);
 	// find first element that greater than or equal to given one
-	auto			 it					   = freePageStore_.lower_bound(pageCount);
+	auto it = freePageStore_.lower_bound(pageCount);
 
-	// 添加搜索限制，避免无限循环
 	constexpr size_t MAX_SEARCH_ITERATIONS = 1000;
 	size_t			 searchCount		   = 0;
 
+	// find valid memory
 	while (it != freePageStore_.end() && searchCount < MAX_SEARCH_ITERATIONS)
 	{
 		searchCount++;
@@ -36,7 +36,7 @@ std::optional<MemorySpan> PageCache::AllocatePage(size_t pageCount)
 		size_t	   sizeToUse   = pageCount * SizeUtil::PAGE_SIZE;
 		MemorySpan memoryToUse = freeSpan.SubSpan(0, sizeToUse);
 		// rest free memory
-		freeSpan			   = freeSpan.SubSpan(sizeToUse);
+		freeSpan = freeSpan.SubSpan(sizeToUse);
 		if (freeSpan.GetSize())
 		{
 			freePageStore_[freeSpan.GetSize() / SizeUtil::PAGE_SIZE].emplace(freeSpan);
@@ -55,7 +55,7 @@ std::optional<MemorySpan> PageCache::AllocatePage(size_t pageCount)
 				size_t	   memoryToUse = pageCount * SizeUtil::PAGE_SIZE;
 				MemorySpan result	   = memory.SubSpan(0, memoryToUse);
 				// rest free memory
-				MemorySpan freeSpan	   = memory.SubSpan(memoryToUse);
+				MemorySpan freeSpan = memory.SubSpan(memoryToUse);
 				if (freeSpan.GetSize())
 				{
 					freePageStore_[freeSpan.GetSize() / SizeUtil::PAGE_SIZE].emplace(freeSpan);
@@ -68,13 +68,11 @@ std::optional<MemorySpan> PageCache::AllocatePage(size_t pageCount)
 void PageCache::DeallocatePage(MemorySpan page)
 {
 	assert(page.GetSize() % SizeUtil::PAGE_SIZE == 0);
-	std::lock_guard	 guard(mutex_);
+	std::lock_guard guard(mutex_);
 
 	// check previous memory spans, combine if continuous
-	// 添加迭代次数限制，防止死循环
 	constexpr size_t MAX_MERGE_ITERATIONS = 100;
 	size_t			 mergeCount			  = 0;
-
 	while (!freePageMap_.empty() && mergeCount < MAX_MERGE_ITERATIONS)
 	{
 		// page should not be contained
@@ -94,11 +92,9 @@ void PageCache::DeallocatePage(MemorySpan page)
 				freePageMap_.erase(it);
 				mergeCount++;
 			}
-			else
-				break; // not continuous
+			else break; // not continuous
 		}
-		else
-			break; // no more previous
+		else break; // no more previous
 	}
 
 	// check memory spans after the page
@@ -116,8 +112,7 @@ void PageCache::DeallocatePage(MemorySpan page)
 			page = MemorySpan(page.GetData(), page.GetSize() + nextSpan.GetSize());
 			mergeCount++;
 		}
-		else
-			break;
+		else break;
 	}
 	const size_t index = page.GetSize() / SizeUtil::PAGE_SIZE;
 	freePageStore_[index].emplace(page);
@@ -132,7 +127,10 @@ std::optional<MemorySpan> PageCache::AllocateUnit(size_t size)
 	return std::make_optional<MemorySpan>(static_cast<std::byte*>(ptr), size);
 }
 
-void PageCache::DeallocateUnit(MemorySpan memoryUnit) { free(memoryUnit.GetData()); }
+void PageCache::DeallocateUnit(MemorySpan memoryUnit)
+{
+	free(memoryUnit.GetData());
+}
 
 void PageCache::Stop()
 {
