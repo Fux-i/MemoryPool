@@ -67,7 +67,7 @@ static constexpr size_t slots_per_block_ = aligned_block_size_ / paddedSlotSize_
 
 #### 1. **慢开始快回收策略** (Slow Start, Fast Recycle)
 
-- **分配时慢开始**: 初始少量分配（4 块），逐步增长，避免内存浪费
+- **分配时慢开始**: 初始少量分配（16 块），逐步增长，避免内存浪费
 - **回收时快速响应**: 超过阈值立即归还一半，下次分配量减半，快速响应内存压力
 - **动态自适应**: ThreadCache 和 CentralCache 两层协同，自动调整内存块数量
 
